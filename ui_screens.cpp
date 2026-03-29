@@ -15,7 +15,7 @@ ftxui::Element RenderIterationHistoryWorkspace(const std::shared_ptr<AppState>& 
     if (stage.iteration_history.empty()) {
         content.push_back(ftxui::text("暂无迭代记录") | ftxui::dim);
     } else {
-        content.push_back(ftxui::text("迭代历史：") | ftxui::bold);
+        content.push_back(ftxui::text("迭代历史") | ftxui::bold);
         content.push_back(ftxui::emptyElement());
 
         std::vector<ftxui::Element> header_row;
@@ -50,10 +50,10 @@ ftxui::Element RenderIterationHistoryWorkspace(const std::shared_ptr<AppState>& 
             row.push_back(ftxui::text(record.summary + " / " + record.next_step) | ftxui::flex);
 
             content.push_back(ftxui::hbox(row) | ftxui::border);
-            content.push_back(ftxui::text("  风险: " + record.reason) | ftxui::dim);
+            content.push_back(ftxui::text("  风险 " + record.reason) | ftxui::dim);
             if (!summary.build_summary.failure_lines.empty() && record.iteration_number == stage.iteration_history.back().iteration_number) {
                 for (const auto& line : summary.build_summary.failure_lines) {
-                    content.push_back(ftxui::text("  关键信号: " + line) | ftxui::color(ftxui::Color::Red));
+                    content.push_back(ftxui::text("  关键信号 " + line) | ftxui::color(ftxui::Color::Red));
                 }
             }
         }
@@ -62,17 +62,17 @@ ftxui::Element RenderIterationHistoryWorkspace(const std::shared_ptr<AppState>& 
     content.push_back(ftxui::emptyElement());
     content.push_back(ftxui::separator());
 
-    std::string iter_stat = "迭代限制：已用 " + std::to_string(stage.iteration_count) + "/" +
+    std::string iter_stat = "迭代限制 已用 " + std::to_string(stage.iteration_count) + "/" +
                            std::to_string(stage.max_iterations) + " 次  [剩余 " +
                            std::to_string(stage.max_iterations - stage.iteration_count) + " 次]";
     content.push_back(ftxui::text(iter_stat) | ftxui::bold);
 
     if (stage.iteration_count >= stage.max_iterations) {
-        content.push_back(ftxui::text("人工介入阈值：已达到最大迭代次数") | ftxui::color(ftxui::Color::Red) | ftxui::bold);
+        content.push_back(ftxui::text("人工介入阈值 已达到最大迭代次数") | ftxui::color(ftxui::Color::Red) | ftxui::bold);
     } else if (stage.iteration_count >= 3) {
-        content.push_back(ftxui::text("人工介入阈值：接近上限，建议关注") | ftxui::color(ftxui::Color::Yellow));
+        content.push_back(ftxui::text("人工介入阈值 接近上限，建议关注") | ftxui::color(ftxui::Color::Yellow));
     } else {
-        content.push_back(ftxui::text("人工介入阈值：超过 " + std::to_string(stage.max_iterations) + " 次自动请求确认"));
+        content.push_back(ftxui::text("人工介入阈值 超过 " + std::to_string(stage.max_iterations) + " 次自动请求确认"));
     }
 
     content.push_back(ftxui::emptyElement());
@@ -103,12 +103,12 @@ ftxui::Element RenderGlobalValidationWorkspace(const std::shared_ptr<AppState>& 
         validation_state = ActionState::FAILURE;
     }
 
-    content.push_back(ftxui::text("复核状态: " + ReviewActionLabel(validation_state, can_complete)) |
+    content.push_back(ftxui::text("复核状态 " + ReviewActionLabel(validation_state, can_complete)) |
                       ftxui::bold | ftxui::color(ActionStateColor(validation_state)));
-    content.push_back(ftxui::text("验收确认: " + std::to_string(passed) + "/" + std::to_string(total)) | ftxui::dim);
+    content.push_back(ftxui::text("验收确认 " + std::to_string(passed) + "/" + std::to_string(total)) | ftxui::dim);
     content.push_back(ftxui::emptyElement());
 
-    content.push_back(ftxui::text("当前工作项 / 验收清单映射：") | ftxui::bold);
+    content.push_back(ftxui::text("当前工作项 / 验收清单映射") | ftxui::bold);
     content.push_back(ftxui::emptyElement());
 
     std::vector<ftxui::Element> header_row;
@@ -156,7 +156,7 @@ ftxui::Element RenderGlobalValidationWorkspace(const std::shared_ptr<AppState>& 
             detail += "构建已完成，建议继续确认该项验收";
         } else if (!test.passed && validation_state == ActionState::FAILURE && !summary.build_summary.failure_lines.empty()) {
             if (!detail.empty()) detail += " | ";
-            detail += "优先排查: " + summary.build_summary.failure_lines.front();
+            detail += "优先排查 " + summary.build_summary.failure_lines.front();
         }
         row.push_back(ftxui::text(detail) | ftxui::flex);
 
@@ -168,7 +168,7 @@ ftxui::Element RenderGlobalValidationWorkspace(const std::shared_ptr<AppState>& 
     content.push_back(ftxui::separator());
 
     int percentage = total > 0 ? (passed * 100 / total) : 0;
-    std::string progress_text = "验收确认进度：" + std::to_string(passed) + "/" +
+    std::string progress_text = "验收确认进度 " + std::to_string(passed) + "/" +
                                std::to_string(total) + " 已确认 (" +
                                std::to_string(percentage) + "%)";
     auto progress_element = ftxui::text(progress_text) | ftxui::bold;
@@ -182,12 +182,12 @@ ftxui::Element RenderGlobalValidationWorkspace(const std::shared_ptr<AppState>& 
         progress_element = progress_element | ftxui::color(ftxui::Color::Yellow);
     }
     content.push_back(progress_element);
-    content.push_back(ftxui::text("完成门槛: 验收清单全部确认") | ftxui::dim);
-    content.push_back(ftxui::text("结果摘要: " + summary.result_summary) | ftxui::dim);
+    content.push_back(ftxui::text("完成门槛 验收清单全部确认") | ftxui::dim);
+    content.push_back(ftxui::text("结果摘要 " + summary.result_summary) | ftxui::dim);
     if (validation_state == ActionState::PARTIAL) {
-        content.push_back(ftxui::text("复核提示: 构建已完成，建议继续逐项确认验收") | ftxui::dim);
+        content.push_back(ftxui::text("复核提示 构建已完成，建议继续逐项确认验收") | ftxui::dim);
     } else if (validation_state == ActionState::FAILURE && !summary.build_summary.failure_lines.empty()) {
-        content.push_back(ftxui::text("复核提示: 优先排查关键信号后再继续确认验收") | ftxui::dim);
+        content.push_back(ftxui::text("复核提示 优先排查关键信号后再继续确认验收") | ftxui::dim);
     }
 
     content.push_back(ftxui::emptyElement());
@@ -226,13 +226,13 @@ ftxui::Element RenderNormalWorkspace(const std::shared_ptr<AppState>& state) {
     const auto& summary = stage.execution_summary;
     std::vector<ftxui::Element> content;
 
-    std::string header = "当前阶段: " + stage.name;
+    std::string header = "当前阶段 " + stage.name;
     if (stage.iteration_count > 0) {
         header += " [迭代 " + std::to_string(stage.iteration_count) + "/" +
                   std::to_string(stage.max_iterations) + "]";
     }
     content.push_back(ftxui::text(header) | ftxui::bold | ftxui::color(ftxui::Color::Yellow));
-    content.push_back(ftxui::text("阶段目标: " + stage.goal) | ftxui::dim);
+    content.push_back(ftxui::text("阶段目标 " + stage.goal) | ftxui::dim);
     content.push_back(ftxui::separator());
 
     if (stage.stage_state == StageState::BLOCKED) {
@@ -253,24 +253,24 @@ ftxui::Element RenderNormalWorkspace(const std::shared_ptr<AppState>& state) {
         content.push_back(ftxui::text(progress_bar) | ftxui::color(ftxui::Color::Cyan));
         content.push_back(ftxui::emptyElement());
 
-        content.push_back(ftxui::text("处理进度:") | ftxui::bold);
+        content.push_back(ftxui::text("处理进度") | ftxui::bold);
         size_t start = stage.conversation_history.size() > 5 ?
                       stage.conversation_history.size() - 5 : 0;
         for (size_t i = start; i < stage.conversation_history.size(); ++i) {
             content.push_back(ftxui::text("  " + stage.conversation_history[i]) | ftxui::dim);
         }
     } else {
-        content.push_back(ftxui::text("结果摘要: " + summary.result_summary) | ftxui::bold);
+        content.push_back(ftxui::text("结果摘要 " + summary.result_summary) | ftxui::bold);
         if (stage.stage_state == StageState::REVIEW) {
             const bool stage_can_complete = workflow::CanCompleteStage(stage);
-            content.push_back(ftxui::text("复核状态: " + ReviewStatusColorLabel(stage.action_state, stage_can_complete)) |
+            content.push_back(ftxui::text("复核状态 " + ReviewStatusColorLabel(stage.action_state, stage_can_complete)) |
                               ftxui::color(ActionStateColor(stage.action_state)));
         }
         content.push_back(ftxui::emptyElement());
         if (state->project->type == ProjectType::NEW_FEATURE) {
-            content.push_back(ftxui::text("当前流程: 新功能 / 优化功能") | ftxui::bold | ftxui::color(ftxui::Color::Blue));
+            content.push_back(ftxui::text("当前流程 新功能 / 优化功能") | ftxui::bold | ftxui::color(ftxui::Color::Blue));
         } else if (state->project->type == ProjectType::BUG_FIX) {
-            content.push_back(ftxui::text("当前流程: 缺陷修复") | ftxui::bold | ftxui::color(ftxui::Color::Red));
+            content.push_back(ftxui::text("当前流程 缺陷修复") | ftxui::bold | ftxui::color(ftxui::Color::Red));
         }
         content.push_back(ftxui::text("项目观察") | ftxui::bold | ftxui::color(ftxui::Color::Cyan));
         for (const auto& item : summary.project_observations) {
@@ -301,16 +301,16 @@ ftxui::Element RenderNormalWorkspace(const std::shared_ptr<AppState>& state) {
         if (summary.build_summary.command_ran) {
             content.push_back(ftxui::emptyElement());
             content.push_back(ftxui::text("构建结果") | ftxui::bold | ftxui::color(ftxui::Color::Cyan));
-            content.push_back(ftxui::text("  - 返回状态: " + std::to_string(summary.build_summary.return_code)));
-            content.push_back(ftxui::text("  - 结论: " + summary.build_summary.headline));
+            content.push_back(ftxui::text("  - 返回状态 " + std::to_string(summary.build_summary.return_code)));
+            content.push_back(ftxui::text("  - 结论 " + summary.build_summary.headline));
             for (const auto& item : summary.build_summary.details) {
                 content.push_back(ftxui::text("  - " + item));
             }
             for (const auto& item : summary.build_summary.failure_lines) {
-                content.push_back(ftxui::text("  - 关键信号: " + item) | ftxui::color(ftxui::Color::Red));
+                content.push_back(ftxui::text("  - 关键信号 " + item) | ftxui::color(ftxui::Color::Red));
             }
             for (const auto& item : summary.build_summary.related_files) {
-                content.push_back(ftxui::text("  - 相关文件: " + item) | ftxui::color(ftxui::Color::Yellow));
+                content.push_back(ftxui::text("  - 相关文件 " + item) | ftxui::color(ftxui::Color::Yellow));
             }
         }
         content.push_back(ftxui::emptyElement());

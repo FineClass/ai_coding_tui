@@ -83,10 +83,10 @@ ftxui::Element RenderContextPanel(const std::shared_ptr<AppState>& state) {
     int total_tests = current_stage.acceptance_tests.size();
     const bool can_complete_stage = total_tests > 0 && passed_tests == total_tests;
 
-    auto stage_state_line = ftxui::text("阶段状态: " + ReviewStatusColorLabel(current_stage.action_state, can_complete_stage)) |
+    auto stage_state_line = ftxui::text("阶段状态 " + ReviewStatusColorLabel(current_stage.action_state, can_complete_stage)) |
                             ftxui::color(ActionStateColor(current_stage.action_state));
     if (current_stage.stage_state != StageState::REVIEW) {
-        stage_state_line = ftxui::text("阶段状态: " + StageStateIcon(current_stage.stage_state) + " " +
+        stage_state_line = ftxui::text("阶段状态 " + StageStateIcon(current_stage.stage_state) + " " +
                                        ((current_stage.stage_state == StageState::RUNNING) ? "执行中" :
                                         (current_stage.stage_state == StageState::DONE) ? "已完成" :
                                         (current_stage.stage_state == StageState::BLOCKED) ? "已阻塞" :
@@ -98,9 +98,9 @@ ftxui::Element RenderContextPanel(const std::shared_ptr<AppState>& state) {
         std::vector<ftxui::Element> feature_context;
         feature_context.push_back(ftxui::text("🧩 当前任务上下文") | ftxui::bold | ftxui::color(ftxui::Color::Cyan));
         feature_context.push_back(ftxui::separator());
-        feature_context.push_back(ftxui::text("阶段: " + current_stage.name) | ftxui::bold);
+        feature_context.push_back(ftxui::text("阶段 " + current_stage.name) | ftxui::bold);
         feature_context.push_back(stage_state_line);
-        feature_context.push_back(ftxui::text("目标: " + current_stage.goal) | ftxui::dim);
+        feature_context.push_back(ftxui::text("目标 " + current_stage.goal) | ftxui::dim);
 
         if (!summary.result_summary.empty()) {
             feature_context.push_back(ftxui::emptyElement());
@@ -120,8 +120,8 @@ ftxui::Element RenderContextPanel(const std::shared_ptr<AppState>& state) {
                 }
             }
             feature_context.push_back(ftxui::emptyElement());
-            feature_context.push_back(ftxui::text("当前任务: " + active_task));
-            feature_context.push_back(ftxui::text("任务进度: " + std::to_string(completed_tasks) + "/" +
+            feature_context.push_back(ftxui::text("当前任务 " + active_task));
+            feature_context.push_back(ftxui::text("任务进度 " + std::to_string(completed_tasks) + "/" +
                                                  std::to_string(state->project->tasks.size())) |
                                       ftxui::color(completed_tasks == (int)state->project->tasks.size() ?
                                                    ftxui::Color::Green : ftxui::Color::Yellow));
@@ -139,18 +139,18 @@ ftxui::Element RenderContextPanel(const std::shared_ptr<AppState>& state) {
         std::vector<ftxui::Element> bug_context;
         bug_context.push_back(ftxui::text("🐞 问题上下文") | ftxui::bold | ftxui::color(ftxui::Color::Red));
         bug_context.push_back(ftxui::separator());
-        bug_context.push_back(ftxui::text("阶段: " + current_stage.name) | ftxui::bold);
+        bug_context.push_back(ftxui::text("阶段 " + current_stage.name) | ftxui::bold);
         bug_context.push_back(stage_state_line);
-        bug_context.push_back(ftxui::text("问题: " + state->project->bug_info.description));
-        bug_context.push_back(ftxui::text("位置: " + state->project->bug_info.location));
+        bug_context.push_back(ftxui::text("问题 " + state->project->bug_info.description));
+        bug_context.push_back(ftxui::text("位置 " + state->project->bug_info.location));
         if (!state->project->bug_info.root_cause.empty()) {
-            bug_context.push_back(ftxui::text("根因/风险: " + state->project->bug_info.root_cause));
+            bug_context.push_back(ftxui::text("根因/风险 " + state->project->bug_info.root_cause));
         }
-        bug_context.push_back(ftxui::text("严重级别: " + state->project->bug_info.severity));
-        bug_context.push_back(ftxui::text("风险等级: " + state->project->bug_info.risk_level));
+        bug_context.push_back(ftxui::text("严重级别 " + state->project->bug_info.severity));
+        bug_context.push_back(ftxui::text("风险等级 " + state->project->bug_info.risk_level));
         if (state->project->current_stage_index >= 1) {
-            bug_context.push_back(ftxui::text("修改文件: " + std::to_string(state->project->bug_info.files_modified)));
-            bug_context.push_back(ftxui::text("变更估计: " + std::to_string(state->project->bug_info.lines_added) + " 行"));
+            bug_context.push_back(ftxui::text("修改文件 " + std::to_string(state->project->bug_info.files_modified)));
+            bug_context.push_back(ftxui::text("变更估计 " + std::to_string(state->project->bug_info.lines_added) + " 行"));
         }
         sections.push_back(ftxui::vbox(bug_context) | ftxui::border);
         sections.push_back(ftxui::emptyElement());
@@ -160,7 +160,7 @@ ftxui::Element RenderContextPanel(const std::shared_ptr<AppState>& state) {
     metrics.push_back(ftxui::text("📌 关键指标") | ftxui::bold | ftxui::color(ftxui::Color::Cyan));
     metrics.push_back(ftxui::separator());
     if (current_stage.iteration_count > 0) {
-        auto iter_line = ftxui::text("迭代: " + std::to_string(current_stage.iteration_count) + "/" +
+        auto iter_line = ftxui::text("迭代 " + std::to_string(current_stage.iteration_count) + "/" +
                                      std::to_string(current_stage.max_iterations));
         if (current_stage.iteration_count >= current_stage.max_iterations) {
             iter_line = iter_line | ftxui::color(ftxui::Color::Red);
@@ -170,7 +170,7 @@ ftxui::Element RenderContextPanel(const std::shared_ptr<AppState>& state) {
         metrics.push_back(iter_line);
     }
     if (total_tests > 0) {
-        auto test_line = ftxui::text("验收: " + std::to_string(passed_tests) + "/" + std::to_string(total_tests));
+        auto test_line = ftxui::text("验收 " + std::to_string(passed_tests) + "/" + std::to_string(total_tests));
         if (passed_tests == total_tests) {
             test_line = test_line | ftxui::color(ftxui::Color::Green);
         } else if (passed_tests > 0) {
@@ -179,14 +179,14 @@ ftxui::Element RenderContextPanel(const std::shared_ptr<AppState>& state) {
         metrics.push_back(test_line);
     }
     if (summary.build_summary.command_ran) {
-        metrics.push_back(ftxui::text("构建: " + std::string(summary.build_summary.success ? "通过" : "失败")) |
+        metrics.push_back(ftxui::text("构建 " + std::string(summary.build_summary.success ? "通过" : "失败")) |
                           ftxui::color(summary.build_summary.success ? ftxui::Color::Green : ftxui::Color::Red));
     }
     if (summary.executor_summary.attempted || summary.executor_summary.available) {
         std::string executor_status = !summary.executor_summary.available ? "不可用" :
                                       summary.executor_summary.success ? "已执行" :
                                       summary.executor_summary.attempted ? "执行失败" : "待执行";
-        auto executor_line = ftxui::text("Claude: " + executor_status);
+        auto executor_line = ftxui::text("Claude " + executor_status);
         if (!summary.executor_summary.available) {
             executor_line = executor_line | ftxui::dim;
         } else if (summary.executor_summary.success) {
