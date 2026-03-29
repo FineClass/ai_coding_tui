@@ -620,7 +620,7 @@ ftxui::Component CreateTypeSelectionScreen(std::shared_ptr<AppState> state) {
         card1.push_back(ftxui::text("流程 需求探讨 → 方案设计 → 任务迭代（局部+全局）"));
         card1.push_back(ftxui::text("产物 需求文档、设计文档、验收测试清单"));
         card1.push_back(ftxui::emptyElement());
-        card1.push_back(ftxui::text("[Enter] 选择此类型") | ftxui::center);
+        card1.push_back(ftxui::text("[Enter/Space] 选择此类型") | ftxui::center);
 
         auto card1_box = ftxui::vbox(card1) | ftxui::border;
         if (*selected == 0) {
@@ -636,7 +636,7 @@ ftxui::Component CreateTypeSelectionScreen(std::shared_ptr<AppState> state) {
         card2.push_back(ftxui::text("流程 明确问题 → 修复方案 → 执行迭代"));
         card2.push_back(ftxui::text("产物 问题报告、修复方案、回归测试结果"));
         card2.push_back(ftxui::emptyElement());
-        card2.push_back(ftxui::text("[Enter] 选择此类型") | ftxui::center);
+        card2.push_back(ftxui::text("[Enter/Space] 选择此类型") | ftxui::center);
 
         auto card2_box = ftxui::vbox(card2) | ftxui::border;
         if (*selected == 1) {
@@ -644,7 +644,7 @@ ftxui::Component CreateTypeSelectionScreen(std::shared_ptr<AppState> state) {
         }
         children.push_back(card2_box);
         children.push_back(ftxui::emptyElement());
-        children.push_back(ftxui::text("快捷键 [↑↓] 选择 · [Enter] 确认 · [Ctrl+Q] 退出") | ftxui::center | ftxui::dim);
+        children.push_back(ftxui::text("快捷键 [↑↓] 选择 · [Enter/Space] 确认 · [Ctrl+Q] 退出") | ftxui::center | ftxui::dim);
 
         return ftxui::vbox(children) | ftxui::center | ftxui::size(ftxui::WIDTH, ftxui::LESS_THAN, 80);
     });
@@ -656,7 +656,7 @@ ftxui::Component CreateTypeSelectionScreen(std::shared_ptr<AppState> state) {
         } else if (event == ftxui::Event::ArrowDown) {
             *selected = (*selected == 1) ? 0 : 1;
             return true;
-        } else if (event == ftxui::Event::Return) {
+        } else if (event == ftxui::Event::Return || event == ftxui::Event::Character(' ')) {
             state->project = std::make_shared<Project>("MyProject", *selected == 0 ? ProjectType::NEW_FEATURE : ProjectType::BUG_FIX);
             state->screen = AppScreen::INPUT_NAME;
             state->NotifyListeners();
