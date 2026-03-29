@@ -644,7 +644,7 @@ ftxui::Component CreateTypeSelectionScreen(std::shared_ptr<AppState> state) {
         }
         children.push_back(card2_box);
         children.push_back(ftxui::emptyElement());
-        children.push_back(ftxui::text("快捷键：[↑↓] 选择 · [Enter] 确认 · [Ctrl+Q] 退出") | ftxui::center | ftxui::dim);
+        children.push_back(ftxui::text("快捷键 [↑↓] 选择 · [Enter] 确认 · [Ctrl+Q] 退出") | ftxui::center | ftxui::dim);
 
         return ftxui::vbox(children) | ftxui::center | ftxui::size(ftxui::WIDTH, ftxui::LESS_THAN, 80);
     });
