@@ -419,7 +419,7 @@ ftxui::Element RenderWorkspaceOverlay(const std::shared_ptr<AppState>& state, ft
     overlay_lines.push_back(ftxui::separator());
     overlay_lines.push_back(ftxui::text(current_stage.execution_summary.result_summary.empty() ? current_stage.goal : current_stage.execution_summary.result_summary));
     if (current_stage.stage_state == StageState::REVIEW && total_tests > 0) {
-        overlay_lines.push_back(ftxui::text("验收确认: " + std::to_string(passed_tests) + "/" + std::to_string(total_tests)) |
+        overlay_lines.push_back(ftxui::text("验收确认 " + std::to_string(passed_tests) + "/" + std::to_string(total_tests)) |
                                 ftxui::dim);
     }
     overlay_lines.push_back(ftxui::emptyElement());
@@ -616,9 +616,9 @@ ftxui::Component CreateTypeSelectionScreen(std::shared_ptr<AppState> state) {
         std::vector<ftxui::Element> card1;
         card1.push_back(ftxui::text("🔵 新功能/优化功能") | ftxui::bold | ftxui::color(ftxui::Color::Blue));
         card1.push_back(ftxui::emptyElement());
-        card1.push_back(ftxui::text("适用场景：从零开发新功能、现有功能优化"));
-        card1.push_back(ftxui::text("流程：需求探讨 → 方案设计 → 任务迭代(局部+全局)"));
-        card1.push_back(ftxui::text("产物：需求文档、设计文档、验收测试清单"));
+        card1.push_back(ftxui::text("适用场景 从零开发新功能、现有功能优化"));
+        card1.push_back(ftxui::text("流程 需求探讨 → 方案设计 → 任务迭代(局部+全局)"));
+        card1.push_back(ftxui::text("产物 需求文档、设计文档、验收测试清单"));
         card1.push_back(ftxui::emptyElement());
         card1.push_back(ftxui::text("[ 选择此类型 ]") | ftxui::center);
 
@@ -632,9 +632,9 @@ ftxui::Component CreateTypeSelectionScreen(std::shared_ptr<AppState> state) {
         std::vector<ftxui::Element> card2;
         card2.push_back(ftxui::text("🔴 修复缺陷") | ftxui::bold | ftxui::color(ftxui::Color::Red));
         card2.push_back(ftxui::emptyElement());
-        card2.push_back(ftxui::text("适用场景：Bug 修复、安全漏洞修补"));
-        card2.push_back(ftxui::text("流程：明确问题 → 修复方案 → 执行迭代"));
-        card2.push_back(ftxui::text("产物：问题报告、修复方案、回归测试结果"));
+        card2.push_back(ftxui::text("适用场景 Bug 修复、安全漏洞修补"));
+        card2.push_back(ftxui::text("流程 明确问题 → 修复方案 → 执行迭代"));
+        card2.push_back(ftxui::text("产物 问题报告、修复方案、回归测试结果"));
         card2.push_back(ftxui::emptyElement());
         card2.push_back(ftxui::text("[ 选择此类型 ]") | ftxui::center);
 
@@ -708,13 +708,13 @@ ftxui::Component CreateNameInputScreen(std::shared_ptr<AppState> state) {
         std::vector<ftxui::Element> info_card;
         std::string type_name = (state->project->type == ProjectType::NEW_FEATURE) ?
             "🔵 新功能/优化功能" : "🔴 修复缺陷";
-        info_card.push_back(ftxui::text("已选择类型：" + type_name) | ftxui::bold);
+        info_card.push_back(ftxui::text("已选择类型 " + type_name) | ftxui::bold);
         info_card.push_back(ftxui::emptyElement());
-        info_card.push_back(ftxui::text("工作目录：" + state->project->working_directory));
+        info_card.push_back(ftxui::text("工作目录 " + state->project->working_directory));
         info_card.push_back(ftxui::emptyElement());
         info_card.push_back(ftxui::text(state->project->type == ProjectType::NEW_FEATURE ?
-            "流程：需求探讨 → 方案设计 → 任务迭代（局部+全局）" :
-            "流程：明确问题 → 修复方案 → 执行迭代"));
+            "流程 需求探讨 → 方案设计 → 任务迭代（局部+全局）" :
+            "流程 明确问题 → 修复方案 → 执行迭代"));
 
         children.push_back(ftxui::vbox(info_card) | ftxui::border | ftxui::color(ftxui::Color::Blue));
         children.push_back(ftxui::emptyElement());
