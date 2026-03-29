@@ -669,7 +669,7 @@ ftxui::Component CreateTypeSelectionScreen(std::shared_ptr<AppState> state) {
 ftxui::Component CreateNameInputScreen(std::shared_ptr<AppState> state) {
     auto input = ftxui::Input(&state->input_name, "输入项目名称");
 
-    auto submit_btn = ftxui::Button("开始创建", [state] {
+    auto submit_project = [state] {
         if (!state->input_name.empty()) {
             state->project->name = state->input_name;
             state->screen = AppScreen::MAIN_WORKSPACE;
@@ -681,7 +681,9 @@ ftxui::Component CreateNameInputScreen(std::shared_ptr<AppState> state) {
             }
             state->NotifyListeners();
         }
-    });
+    };
+
+    auto submit_btn = ftxui::Button("开始创建", submit_project);
 
     auto cancel_btn = ftxui::Button("返回", [state] {
         state->screen = AppScreen::SELECT_TYPE;
@@ -690,7 +692,11 @@ ftxui::Component CreateNameInputScreen(std::shared_ptr<AppState> state) {
     });
 
     auto container = ftxui::Container::Vertical({input, submit_btn, cancel_btn});
-    auto component = ftxui::CatchEvent(container, [state](ftxui::Event event) {
+    auto component = ftxui::CatchEvent(container, [state, submit_project](ftxui::Event event) {
+        if (event == ftxui::Event::Return) {
+            submit_project();
+            return true;
+        }
         if (event == ftxui::Event::Escape) {
             state->screen = AppScreen::SELECT_TYPE;
             state->input_name.clear();
