@@ -267,9 +267,9 @@ ftxui::Element RenderStatusBar(const std::shared_ptr<AppState>& state) {
 
     std::string type_label = (state->project->type == ProjectType::NEW_FEATURE) ? "新功能" : "缺陷修复";
     auto type_color = (state->project->type == ProjectType::NEW_FEATURE) ? ftxui::Color::Blue : ftxui::Color::Red;
-    status_items.push_back(ftxui::text("[流程: " + type_label + "]") | ftxui::color(type_color) | ftxui::bold);
+    status_items.push_back(ftxui::text("[" + type_label + "流程]") | ftxui::color(type_color) | ftxui::bold);
 
-    std::string stage_text = "[阶段: " + std::to_string(state->project->current_stage_index + 1) + "/" +
+    std::string stage_text = "[阶段 " + std::to_string(state->project->current_stage_index + 1) + "/" +
                              std::to_string(state->project->stages.size()) + " " + current_stage.name + "]";
     status_items.push_back(ftxui::text(stage_text) | ftxui::color(StageStateColor(current_stage.stage_state)));
 
@@ -281,13 +281,13 @@ ftxui::Element RenderStatusBar(const std::shared_ptr<AppState>& state) {
         } else if (current_stage.action_state == ActionState::FAILURE) {
             review_color = ftxui::Color::Red;
         }
-        status_items.push_back(ftxui::text("[复核: " + review_status + "]") | ftxui::color(review_color));
-        status_items.push_back(ftxui::text("[动作: " + ActionStateIcon(current_stage.action_state) + " " + ActionStateLabel(current_stage.action_state) + "]") |
+        status_items.push_back(ftxui::text("[复核 " + review_status + "]") | ftxui::color(review_color));
+        status_items.push_back(ftxui::text("[动作 " + ActionStateIcon(current_stage.action_state) + " " + ActionStateLabel(current_stage.action_state) + "]") |
                                ftxui::color(ActionStateColor(current_stage.action_state)));
     }
 
     if (current_stage.iteration_count > 0) {
-        std::string iter_text = "[迭代: " + std::to_string(current_stage.iteration_count) + "/" +
+        std::string iter_text = "[迭代 " + std::to_string(current_stage.iteration_count) + "/" +
                                std::to_string(current_stage.max_iterations) + "]";
         auto iter_color = (current_stage.iteration_count >= current_stage.max_iterations) ? ftxui::Color::Red :
                          (current_stage.iteration_count >= 3) ? ftxui::Color::Yellow : ftxui::Color::Green;
@@ -295,7 +295,7 @@ ftxui::Element RenderStatusBar(const std::shared_ptr<AppState>& state) {
     }
 
     if (total_tests > 0) {
-        std::string test_text = "[验收: " + std::to_string(passed_tests) + "/" + std::to_string(total_tests);
+        std::string test_text = "[验收 " + std::to_string(passed_tests) + "/" + std::to_string(total_tests);
         if (passed_tests == total_tests) {
             test_text += " ✅]";
         } else {
