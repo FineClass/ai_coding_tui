@@ -1,0 +1,9 @@
+prefix="/opt/tui/libftxui"
+libdir="/opt/tui/libftxui/lib"
+includedir="/opt/tui/libftxui/include"
+
+Name: ftxui
+Description: C++ Functional Terminal User Interface.
+Version: 6.1.9
+Cflags: -I${includedir}
+Libs: -L${libdir} -lftxui-component -lftxui-dom -lftxui-screen
