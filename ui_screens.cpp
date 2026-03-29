@@ -322,7 +322,7 @@ ftxui::Element RenderNormalWorkspace(const std::shared_ptr<AppState>& state) {
         content.push_back(ftxui::emptyElement());
         if (stage.stage_state == StageState::DONE) {
             if (state->project->current_stage_index < (int)state->project->stages.size() - 1) {
-                content.push_back(ftxui::text("[Space] 进入下一阶段") | ftxui::dim);
+                content.push_back(ftxui::text("[Enter/Space] 进入下一阶段") | ftxui::dim);
             } else {
                 content.push_back(ftxui::text("🎉 项目全部完成!") | ftxui::bold | ftxui::color(ftxui::Color::Blue));
             }
@@ -337,7 +337,7 @@ ftxui::Element RenderNormalWorkspace(const std::shared_ptr<AppState>& state) {
                 content.push_back(ftxui::text("[T] 继续确认验收项，全部确认后再完成阶段") | ftxui::dim);
             }
         } else if (stage.stage_state == StageState::READY || stage.stage_state == StageState::PENDING) {
-            content.push_back(ftxui::text("[Space] 开始当前阶段") | ftxui::dim);
+            content.push_back(ftxui::text("[Enter/Space] 开始当前阶段") | ftxui::dim);
         }
     }
 

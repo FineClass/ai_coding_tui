@@ -217,10 +217,10 @@ ftxui::Element RenderContextPanel(const std::shared_ptr<AppState>& state) {
         }
         actions.push_back(ftxui::text("[I] 局部迭代详情 · [V] 全局复核") | ftxui::dim);
     } else if (current_stage.stage_state == StageState::DONE) {
-        actions.push_back(ftxui::text("[Space] 进入下一阶段") | ftxui::color(ftxui::Color::Green));
+        actions.push_back(ftxui::text("[Enter/Space] 进入下一阶段") | ftxui::color(ftxui::Color::Green));
         actions.push_back(ftxui::text("[I] 局部迭代详情 · [V] 全局复核") | ftxui::dim);
     } else {
-        actions.push_back(ftxui::text("[Space] 启动当前阶段") | ftxui::color(ftxui::Color::Green));
+        actions.push_back(ftxui::text("[Enter/Space] 启动当前阶段") | ftxui::color(ftxui::Color::Green));
         actions.push_back(ftxui::text("[I] 局部迭代详情 · [V] 全局复核") | ftxui::dim);
     }
     if (!summary.next_actions.empty()) {
