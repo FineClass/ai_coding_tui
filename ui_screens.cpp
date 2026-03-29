@@ -274,49 +274,49 @@ ftxui::Element RenderNormalWorkspace(const std::shared_ptr<AppState>& state) {
         }
         content.push_back(ftxui::text("项目观察") | ftxui::bold | ftxui::color(ftxui::Color::Cyan));
         for (const auto& item : summary.project_observations) {
-            content.push_back(ftxui::text("  - " + item));
+            content.push_back(ftxui::text("- " + item));
         }
         content.push_back(ftxui::emptyElement());
         content.push_back(ftxui::text("关键文件") | ftxui::bold | ftxui::color(ftxui::Color::Cyan));
         for (const auto& item : summary.key_files) {
-            content.push_back(ftxui::text("  - " + item));
+            content.push_back(ftxui::text("- " + item));
         }
         if (!summary.project_observations.empty()) {
             for (const auto& item : summary.project_observations) {
                 if (item.find("构建文件:") == 0 || item.find("核心目录:") == 0 || item.find("入口线索:") == 0) {
-                    content.push_back(ftxui::text("  * " + item) | ftxui::color(ftxui::Color::Yellow));
+                    content.push_back(ftxui::text("* " + item) | ftxui::color(ftxui::Color::Yellow));
                 }
             }
         }
         content.push_back(ftxui::emptyElement());
         content.push_back(ftxui::text("实施说明") | ftxui::bold | ftxui::color(ftxui::Color::Cyan));
         for (const auto& item : summary.implementation_notes) {
-            content.push_back(ftxui::text("  - " + item));
+            content.push_back(ftxui::text("- " + item));
         }
         content.push_back(ftxui::emptyElement());
         content.push_back(ftxui::text("复核重点") | ftxui::bold | ftxui::color(ftxui::Color::Cyan));
         for (const auto& item : summary.validation_points) {
-            content.push_back(ftxui::text("  - " + item));
+            content.push_back(ftxui::text("- " + item));
         }
         if (summary.build_summary.command_ran) {
             content.push_back(ftxui::emptyElement());
             content.push_back(ftxui::text("构建结果") | ftxui::bold | ftxui::color(ftxui::Color::Cyan));
-            content.push_back(ftxui::text("  - 返回状态 " + std::to_string(summary.build_summary.return_code)));
-            content.push_back(ftxui::text("  - 结论 " + summary.build_summary.headline));
+            content.push_back(ftxui::text("- 返回状态 " + std::to_string(summary.build_summary.return_code)));
+            content.push_back(ftxui::text("- 结论 " + summary.build_summary.headline));
             for (const auto& item : summary.build_summary.details) {
-                content.push_back(ftxui::text("  - " + item));
+                content.push_back(ftxui::text("- " + item));
             }
             for (const auto& item : summary.build_summary.failure_lines) {
-                content.push_back(ftxui::text("  - 关键信号 " + item) | ftxui::color(ftxui::Color::Red));
+                content.push_back(ftxui::text("- 关键信号 " + item) | ftxui::color(ftxui::Color::Red));
             }
             for (const auto& item : summary.build_summary.related_files) {
-                content.push_back(ftxui::text("  - 相关文件 " + item) | ftxui::color(ftxui::Color::Yellow));
+                content.push_back(ftxui::text("- 相关文件 " + item) | ftxui::color(ftxui::Color::Yellow));
             }
         }
         content.push_back(ftxui::emptyElement());
         content.push_back(ftxui::text("下一步") | ftxui::bold | ftxui::color(ftxui::Color::Cyan));
         for (const auto& item : summary.next_actions) {
-            content.push_back(ftxui::text("  - " + item));
+            content.push_back(ftxui::text("- " + item));
         }
 
         content.push_back(ftxui::emptyElement());
@@ -617,10 +617,10 @@ ftxui::Component CreateTypeSelectionScreen(std::shared_ptr<AppState> state) {
         card1.push_back(ftxui::text("🔵 新功能/优化功能") | ftxui::bold | ftxui::color(ftxui::Color::Blue));
         card1.push_back(ftxui::emptyElement());
         card1.push_back(ftxui::text("适用场景 从零开发新功能、现有功能优化"));
-        card1.push_back(ftxui::text("流程 需求探讨 → 方案设计 → 任务迭代(局部+全局)"));
+        card1.push_back(ftxui::text("流程 需求探讨 → 方案设计 → 任务迭代（局部+全局）"));
         card1.push_back(ftxui::text("产物 需求文档、设计文档、验收测试清单"));
         card1.push_back(ftxui::emptyElement());
-        card1.push_back(ftxui::text("[ 选择此类型 ]") | ftxui::center);
+        card1.push_back(ftxui::text("[Enter] 选择此类型") | ftxui::center);
 
         auto card1_box = ftxui::vbox(card1) | ftxui::border;
         if (*selected == 0) {
@@ -636,7 +636,7 @@ ftxui::Component CreateTypeSelectionScreen(std::shared_ptr<AppState> state) {
         card2.push_back(ftxui::text("流程 明确问题 → 修复方案 → 执行迭代"));
         card2.push_back(ftxui::text("产物 问题报告、修复方案、回归测试结果"));
         card2.push_back(ftxui::emptyElement());
-        card2.push_back(ftxui::text("[ 选择此类型 ]") | ftxui::center);
+        card2.push_back(ftxui::text("[Enter] 选择此类型") | ftxui::center);
 
         auto card2_box = ftxui::vbox(card2) | ftxui::border;
         if (*selected == 1) {
@@ -738,7 +738,7 @@ ftxui::Component CreateMainWorkspace(std::shared_ptr<AppState> state) {
     });
 
     auto workspace_renderer = ftxui::Renderer([state] {
-        if (!state->project) return ftxui::text("Error");
+        if (!state->project) return ftxui::text("项目未初始化");
         if (state->ui_session.workspace_view == WorkspaceView::ITERATION_HISTORY) {
             return RenderIterationHistoryWorkspace(state);
         }
