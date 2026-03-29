@@ -524,11 +524,6 @@ bool route_workspace_event(const std::shared_ptr<AppState>& state, ftxui::Event 
                 state->NotifyListeners();
                 return true;
             }
-            return false;
-        }
-
-        if (state->ui_session.active_region == FocusRegion::STATUS_BAR) {
-            return true;
         }
 
         if ((stage.stage_state == StageState::READY || stage.stage_state == StageState::PENDING) &&
