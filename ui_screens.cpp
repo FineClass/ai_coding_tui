@@ -430,7 +430,12 @@ ftxui::Element RenderWorkspaceOverlay(const std::shared_ptr<AppState>& state, ft
         }
         overlay_lines.push_back(ftxui::emptyElement());
     }
-    overlay_lines.push_back(ftxui::text(footer_hint + " · [C] 完成阶段（仅可完成时）") | ftxui::dim);
+    std::string overlay_footer = footer_hint;
+    if (current_stage.stage_state == StageState::DONE ||
+        (current_stage.stage_state == StageState::REVIEW && workflow::CanCompleteStage(current_stage))) {
+        overlay_footer += " · [C] 完成阶段";
+    }
+    overlay_lines.push_back(ftxui::text(overlay_footer) | ftxui::dim);
 
     auto overlay = ftxui::vbox(overlay_lines) |
                    ftxui::border |

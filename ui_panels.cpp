@@ -243,10 +243,10 @@ ftxui::Element RenderContextPanel(const std::shared_ptr<AppState>& state) {
         shortcuts.push_back(ftxui::text("[T] 验收确认") | ftxui::dim);
     }
     if (current_stage.stage_state == StageState::BLOCKED) {
-        shortcuts.push_back(ftxui::text("[R] 重试阶段") | ftxui::dim);
+        shortcuts.push_back(ftxui::text("[R] 重置并重试") | ftxui::dim);
     }
     if (can_complete_stage && current_stage.stage_state == StageState::REVIEW) {
-        shortcuts.push_back(ftxui::text("[C] 完成阶段") | ftxui::dim);
+        shortcuts.push_back(ftxui::text("[C] 完成当前阶段") | ftxui::dim);
     }
     shortcuts.push_back(ftxui::text("[Ctrl+Q] 退出") | ftxui::dim);
     sections.push_back(ftxui::vbox(shortcuts) | ftxui::border);
