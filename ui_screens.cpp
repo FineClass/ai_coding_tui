@@ -265,6 +265,9 @@ ftxui::Element RenderNormalWorkspace(const std::shared_ptr<AppState>& state) {
             const bool stage_can_complete = workflow::CanCompleteStage(stage);
             content.push_back(ftxui::text("复核状态 " + ReviewStatusColorLabel(stage.action_state, stage_can_complete)) |
                               ftxui::color(ActionStateColor(stage.action_state)));
+            if (!summary.risk_summary.empty()) {
+                content.push_back(ftxui::text("风险提示 " + summary.risk_summary) | ftxui::color(ftxui::Color::Yellow));
+            }
         }
         content.push_back(ftxui::emptyElement());
         if (state->project->type == ProjectType::NEW_FEATURE) {
@@ -364,7 +367,13 @@ ftxui::Element RenderNormalWorkspace(const std::shared_ptr<AppState>& state) {
             }
             content.push_back(ftxui::text(icon + " " + test.description) | ftxui::color(test_color));
             if (!test.notes.empty()) {
-                content.push_back(ftxui::text("    " + test.notes) | ftxui::dim);
+                auto note = ftxui::text("    " + test.notes) | ftxui::dim;
+                if (!test.passed && stage.stage_state == StageState::REVIEW && stage.action_state == ActionState::FAILURE) {
+                    note = note | ftxui::color(ftxui::Color::Red);
+                } else if (!test.passed && stage.stage_state == StageState::REVIEW) {
+                    note = note | ftxui::color(ftxui::Color::Yellow);
+                }
+                content.push_back(note);
             }
         }
 

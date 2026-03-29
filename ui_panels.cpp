@@ -179,8 +179,13 @@ ftxui::Element RenderContextPanel(const std::shared_ptr<AppState>& state) {
         metrics.push_back(test_line);
     }
     if (summary.build_summary.command_ran) {
-        metrics.push_back(ftxui::text("构建 " + std::string(summary.build_summary.success ? "通过" : "失败")) |
-                          ftxui::color(summary.build_summary.success ? ftxui::Color::Green : ftxui::Color::Red));
+        auto build_line = ftxui::text("构建 " + std::string(summary.build_summary.success ? "通过" : "失败")) |
+                          ftxui::color(summary.build_summary.success ? ftxui::Color::Green : ftxui::Color::Red);
+        metrics.push_back(build_line);
+        if (!summary.build_summary.failure_lines.empty()) {
+            metrics.push_back(ftxui::text("失败信号 " + summary.build_summary.failure_lines.front()) |
+                              ftxui::color(ftxui::Color::Red));
+        }
     }
     if (summary.executor_summary.attempted || summary.executor_summary.available) {
         std::string executor_status = !summary.executor_summary.available ? "不可用" :
@@ -229,6 +234,11 @@ ftxui::Element RenderContextPanel(const std::shared_ptr<AppState>& state) {
         for (size_t i = 0; i < summary.next_actions.size() && i < 3; ++i) {
             actions.push_back(ftxui::text("- " + summary.next_actions[i]));
         }
+    }
+    if (!summary.risk_summary.empty()) {
+        actions.push_back(ftxui::emptyElement());
+        actions.push_back(ftxui::text("风险提示") | ftxui::bold);
+        actions.push_back(ftxui::text(summary.risk_summary) | ftxui::color(ftxui::Color::Yellow));
     }
     sections.push_back(ftxui::vbox(actions) | ftxui::border);
     sections.push_back(ftxui::emptyElement());

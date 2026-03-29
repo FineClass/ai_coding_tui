@@ -270,6 +270,22 @@ std::vector<std::string> CollectBuildFiles(const std::vector<std::string>& files
     return result;
 }
 
+void AppendUniqueLine(std::vector<std::string>& target, const std::string& line) {
+    auto trimmed = Trim(line);
+    if (trimmed.empty()) {
+        return;
+    }
+    if (std::find(target.begin(), target.end(), trimmed) == target.end()) {
+        target.push_back(trimmed);
+    }
+}
+
+void AppendLines(std::vector<std::string>& target, const std::vector<std::string>& lines, const std::string& prefix = "") {
+    for (const auto& line : lines) {
+        AppendUniqueLine(target, prefix.empty() ? line : prefix + line);
+    }
+}
+
 std::vector<std::string> SummarizeCommandOutput(const std::string& text, size_t max_lines = 3) {
     std::vector<std::string> lines;
     std::istringstream stream(text);
@@ -428,6 +444,7 @@ StageExecutionSummary BuildStageSummary(const Project& project, ProjectStage& st
     std::string preview_output;
     int preview_rc = RunCommandCapture("cd " + ShellQuote(project.working_directory) + " && make -n 2>&1", preview_output);
     auto preview_lines = SummarizeCommandOutput(preview_output, 3);
+    auto preview_failures = ExtractFailureLines(preview_output, 3);
     std::string preview_headline = preview_rc == 0 ? FirstLine(preview_output) : "未检测到可用的 make 预览输出";
 
     summary.project_observations.push_back("工作目录: " + project.working_directory);
@@ -436,7 +453,15 @@ StageExecutionSummary BuildStageSummary(const Project& project, ProjectStage& st
     summary.project_observations.push_back("核心目录: " + (core_dirs.empty() ? std::string("未识别") : core_dirs.front() + (core_dirs.size() > 1 ? " 等" : "")));
     summary.project_observations.push_back("子目录概览: " + (dirs.empty() ? std::string("无") : dirs.front() + (dirs.size() > 1 ? " 等" : "")));
     summary.project_observations.push_back("顶层文件: " + (files.empty() ? std::string("无") : files.front() + (files.size() > 1 ? " 等" : "")));
+    summary.project_observations.push_back(std::string("构建预览: ") + (preview_rc == 0 ? "可用" : "不可用"));
     summary.key_files = candidate_files.empty() ? files : candidate_files;
+
+    summary.build_summary.return_code = preview_rc;
+    summary.build_summary.command_ran = true;
+    summary.build_summary.success = preview_rc == 0;
+    summary.build_summary.headline = preview_headline;
+    summary.build_summary.details = preview_lines;
+    summary.build_summary.failure_lines = preview_failures;
 
     if (is_analysis_stage(stage.name)) {
         summary.implementation_notes.push_back("源码类型分布: " + (extensions.empty() ? std::string("无") : extensions.front()));
@@ -451,6 +476,7 @@ StageExecutionSummary BuildStageSummary(const Project& project, ProjectStage& st
         }
         summary.implementation_notes.push_back("构建入口预览: " + preview_headline);
         summary.validation_points = stage.work_items;
+        AppendLines(summary.validation_points, preview_lines, "构建预览: ");
         summary.next_actions = {
             "确定本阶段要关注的关键文件和模块",
             "把目录观察结果整理成可执行目标",
@@ -458,11 +484,6 @@ StageExecutionSummary BuildStageSummary(const Project& project, ProjectStage& st
         };
         summary.risk_summary = "风险较低，主要风险在于需求边界仍不够具体。";
         summary.result_summary = "已完成当前工程结构、构建方式和入口线索的真实分析。";
-        summary.build_summary.return_code = preview_rc;
-        summary.build_summary.command_ran = true;
-        summary.build_summary.success = preview_rc == 0;
-        summary.build_summary.headline = preview_headline;
-        summary.build_summary.details = preview_lines;
     } else if (is_design_stage(stage.name)) {
         summary.implementation_notes = stage.work_items;
         if (!build_files.empty()) {
@@ -477,6 +498,7 @@ StageExecutionSummary BuildStageSummary(const Project& project, ProjectStage& st
             "任务树或问题面板可映射真实工作项",
             "验收说明来自真实扫描与构建结果",
         };
+        AppendLines(summary.validation_points, preview_lines, "构建预览: ");
         summary.next_actions = {
             "优先修改关键文件并保留现有快捷键交互",
             "执行阶段时输出构建摘要和下一步动作",
@@ -484,11 +506,6 @@ StageExecutionSummary BuildStageSummary(const Project& project, ProjectStage& st
         };
         summary.risk_summary = "主要风险在于展示信息不一致，需要同步更新左右栏和历史记录。";
         summary.result_summary = "已形成可直接落地到当前代码结构的实施方案。";
-        summary.build_summary.return_code = preview_rc;
-        summary.build_summary.command_ran = true;
-        summary.build_summary.success = preview_rc == 0;
-        summary.build_summary.headline = preview_headline;
-        summary.build_summary.details = preview_lines;
     } else {
         summary.executor_summary = RunStageExecutor(project, stage, candidate_files);
         std::string build_output;
@@ -514,6 +531,10 @@ StageExecutionSummary BuildStageSummary(const Project& project, ProjectStage& st
             "提炼关键输出供人工验收",
             "记录关键信号或下一步建议",
         };
+        AppendLines(summary.validation_points, summary.executor_summary.details, "执行器输出: ");
+        AppendLines(summary.validation_points, build_lines, "构建输出: ");
+        AppendLines(summary.validation_points, failure_lines, "失败信号: ");
+        AppendLines(summary.validation_points, related_files, "相关文件: ");
         if (build_rc == 0) {
             summary.next_actions = {"根据验收清单逐项确认结果", "检查关键文件是否反映预期变化", "确认是否可以推进下一阶段"};
             if (summary.executor_summary.available && summary.executor_summary.success) {
@@ -537,9 +558,6 @@ StageExecutionSummary BuildStageSummary(const Project& project, ProjectStage& st
                 summary.risk_summary += " Claude Code 执行也未完全成功。";
             }
             summary.result_summary = failure_lines.empty() ? "已执行真实构建，但当前存在失败信号。" : "已执行真实构建，并提炼出关键信号。";
-            if (!failure_lines.empty()) {
-                summary.validation_points.push_back("关键信号: " + failure_lines.front());
-            }
             if (!related_files.empty()) {
                 summary.key_files.insert(summary.key_files.begin(), related_files.begin(), related_files.end());
             }
@@ -554,6 +572,23 @@ StageExecutionSummary BuildStageSummary(const Project& project, ProjectStage& st
     }
 
     return summary;
+}
+
+std::vector<std::string> BuildAcceptanceEvidence(const StageExecutionSummary& summary) {
+    std::vector<std::string> evidence;
+    AppendLines(evidence, summary.validation_points);
+    AppendLines(evidence, summary.executor_summary.failure_lines, "执行器关键信号: ");
+    AppendLines(evidence, summary.executor_summary.details, "执行器输出: ");
+    AppendLines(evidence, summary.build_summary.failure_lines, "构建关键信号: ");
+    AppendLines(evidence, summary.build_summary.details, "构建输出: ");
+    AppendLines(evidence, summary.build_summary.related_files, "相关文件: ");
+    if (!summary.result_summary.empty()) {
+        AppendUniqueLine(evidence, "结果摘要: " + summary.result_summary);
+    }
+    if (!summary.risk_summary.empty()) {
+        AppendUniqueLine(evidence, "风险提示: " + summary.risk_summary);
+    }
+    return evidence;
 }
 
 std::string BuildStageOutput(const Project& project, const ProjectStage& stage) {

@@ -4,6 +4,7 @@
 #include "workflow_controller.h"
 
 #include <chrono>
+#include <utility>
 
 AcpreTui& AcpreTui::get_instance(void) noexcept {
     static AcpreTui instance;
@@ -65,7 +66,12 @@ void AppState::run_stage_iteration() {
         return;
     }
 
-    auto& stage = project->stages[project->current_stage_index];
+    ProjectStage* current_stage = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(state_mutex);
+        current_stage = &project->stages[project->current_stage_index];
+    }
+
     std::vector<std::string> logs = {
         "开始检查当前目录中的真实工程状态",
         "汇总本阶段要处理的实际工作项",
@@ -76,60 +82,69 @@ void AppState::run_stage_iteration() {
         {
             std::lock_guard<std::mutex> lock(state_mutex);
             processing_progress = static_cast<int>((i + 1) * 100 / logs.size());
-            stage.conversation_history.push_back(logs[i]);
+            current_stage->conversation_history.push_back(logs[i]);
         }
         NotifyListeners();
     }
 
+    ProjectStage stage_snapshot;
+    std::shared_ptr<Project> project_snapshot;
     {
         std::lock_guard<std::mutex> lock(state_mutex);
-        stage.execution_summary = runtime::BuildStageSummary(*project, stage);
-        stage.output = runtime::BuildStageOutput(*project, stage);
+        project_snapshot = project;
+        stage_snapshot = *current_stage;
+    }
+
+    auto summary = runtime::BuildStageSummary(*project_snapshot, stage_snapshot);
+    stage_snapshot.execution_summary = summary;
+    auto output = runtime::BuildStageOutput(*project_snapshot, stage_snapshot);
+    auto acceptance_evidence = runtime::BuildAcceptanceEvidence(summary);
+
+    {
+        std::lock_guard<std::mutex> lock(state_mutex);
+        current_stage->execution_summary = std::move(summary);
+        current_stage->output = std::move(output);
 
         IterationRecord record;
-        record.iteration_number = stage.iteration_count;
-        record.action = is_analysis_stage(stage.name) ? "结构分析" : (is_design_stage(stage.name) ? "方案整理" : "构建检查");
-        if (!is_execution_stage(stage.name)) {
+        record.iteration_number = current_stage->iteration_count;
+        record.action = is_analysis_stage(current_stage->name) ? "结构分析" : (is_design_stage(current_stage->name) ? "方案整理" : "构建检查");
+        if (!is_execution_stage(current_stage->name)) {
             record.test_result = "待人工确认";
             record.status_icon = "🟡";
-        } else if (stage.execution_summary.build_summary.success && stage.execution_summary.executor_summary.available && stage.execution_summary.executor_summary.success) {
+        } else if (current_stage->execution_summary.build_summary.success && current_stage->execution_summary.executor_summary.available && current_stage->execution_summary.executor_summary.success) {
             record.test_result = "验收已确认";
             record.status_icon = "🟢";
-        } else if (stage.execution_summary.build_summary.success) {
+        } else if (current_stage->execution_summary.build_summary.success) {
             record.test_result = "待进一步复核";
             record.status_icon = "🟡";
         } else {
             record.test_result = "存在失败信号";
             record.status_icon = "🔴";
         }
-        record.reason = stage.execution_summary.risk_summary;
-        record.summary = stage.execution_summary.result_summary;
-        record.next_step = stage.execution_summary.next_actions.empty() ? "等待验收确认" : stage.execution_summary.next_actions.front();
-        stage.iteration_history.push_back(record);
+        record.reason = current_stage->execution_summary.risk_summary;
+        record.summary = current_stage->execution_summary.result_summary;
+        record.next_step = current_stage->execution_summary.next_actions.empty() ? "等待验收确认" : current_stage->execution_summary.next_actions.front();
+        current_stage->iteration_history.push_back(record);
 
-        for (size_t i = 0; i < stage.acceptance_tests.size(); ++i) {
-            auto& test = stage.acceptance_tests[i];
+        for (size_t i = 0; i < current_stage->acceptance_tests.size(); ++i) {
+            auto& test = current_stage->acceptance_tests[i];
             test.passed = false;
-            if (i < stage.execution_summary.validation_points.size()) {
-                test.notes = stage.execution_summary.validation_points[i];
-            } else if (i < stage.execution_summary.build_summary.details.size()) {
-                test.notes = stage.execution_summary.build_summary.details[i];
-            } else if (!stage.execution_summary.executor_summary.headline.empty()) {
-                test.notes = stage.execution_summary.executor_summary.headline;
+            if (i < acceptance_evidence.size()) {
+                test.notes = acceptance_evidence[i];
             } else {
-                test.notes = stage.execution_summary.result_summary;
+                test.notes = current_stage->execution_summary.result_summary;
             }
         }
 
-        stage.stage_state = StageState::REVIEW;
-        if (!is_execution_stage(stage.name)) {
-            stage.action_state = ActionState::IDLE;
-        } else if (stage.execution_summary.build_summary.success && stage.execution_summary.executor_summary.available && stage.execution_summary.executor_summary.success) {
-            stage.action_state = ActionState::SUCCESS;
-        } else if (stage.execution_summary.build_summary.success) {
-            stage.action_state = ActionState::PARTIAL;
+        current_stage->stage_state = StageState::REVIEW;
+        if (!is_execution_stage(current_stage->name)) {
+            current_stage->action_state = ActionState::IDLE;
+        } else if (current_stage->execution_summary.build_summary.success && current_stage->execution_summary.executor_summary.available && current_stage->execution_summary.executor_summary.success) {
+            current_stage->action_state = ActionState::SUCCESS;
+        } else if (current_stage->execution_summary.build_summary.success) {
+            current_stage->action_state = ActionState::PARTIAL;
         } else {
-            stage.action_state = ActionState::FAILURE;
+            current_stage->action_state = ActionState::FAILURE;
         }
         is_processing = false;
         processing_progress = 0;
