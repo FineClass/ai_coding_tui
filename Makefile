@@ -5,7 +5,7 @@ CXX = g++
 FTXUI = $(TOPDIR)/libftxui
 
 TARG = acpre_tui
-OBJS = main.o acpre.o domain.o workflow_controller.o project_runtime.o ui_panels.o ui_screens.o
+OBJS = main.o acpre.o domain.o workflow_controller.o project_runtime.o ui_panels.o ui_screens.o project_persistence.o
 
 CXXFLAGS = -Wall -O2 -std=c++17 -I$(FTXUI)/include
 # `ftxui-component` must be first in the linking order relative to the other FTXUI libraries

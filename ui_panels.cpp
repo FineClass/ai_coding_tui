@@ -258,6 +258,7 @@ ftxui::Element RenderContextPanel(const std::shared_ptr<AppState>& state) {
     if (can_complete_stage && current_stage.stage_state == StageState::REVIEW) {
         shortcuts.push_back(ftxui::text("[C] 完成当前阶段") | ftxui::dim);
     }
+    shortcuts.push_back(ftxui::text("[/] 输入指令") | ftxui::dim);
     shortcuts.push_back(ftxui::text("[Ctrl+Q] 退出") | ftxui::dim);
     sections.push_back(ftxui::vbox(shortcuts) | ftxui::border);
 

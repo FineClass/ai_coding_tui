@@ -1,4 +1,5 @@
 #include "workflow_controller.h"
+#include "project_persistence.h"
 
 namespace workflow {
 
@@ -154,6 +155,7 @@ bool CompleteCurrentStage(Project& project, bool& is_processing) {
     stage.execution_summary.result_summary = "当前阶段已按验收清单确认完成。";
     is_processing = false;
     SyncDerivedProjectState(project);
+    persistence::SaveProject(project, persistence::DefaultSavePath(project.working_directory));
 
     if (project.current_stage_index < static_cast<int>(project.stages.size()) - 1) {
         project.current_stage_index++;

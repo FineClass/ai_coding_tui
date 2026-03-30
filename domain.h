@@ -73,6 +73,9 @@ struct UiSessionState {
     CompactMode compact_mode = CompactMode::FULL;
     bool input_captured_by_overlay = false;
     int project_tree_index = 0;
+    float scroll_y = 0.0f;
+    bool input_mode = false;
+    std::string user_input;
 };
 
 struct AcceptanceTest {

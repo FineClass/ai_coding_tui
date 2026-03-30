@@ -1,9 +1,11 @@
 #include "acpre.h"
 #include "project_runtime.h"
+#include "project_persistence.h"
 #include "ui_screens.h"
 #include "workflow_controller.h"
 
 #include <chrono>
+#include <filesystem>
 #include <utility>
 
 AcpreTui& AcpreTui::get_instance(void) noexcept {
@@ -180,6 +182,7 @@ int AcpreTui::run(const int argc, char *argv[]) {
     (void)argv;
 
     auto state = std::make_shared<AppState>();
+    state->has_saved_state = persistence::SaveFileExists(std::filesystem::current_path().string());
     auto screen = ftxui::ScreenInteractive::Fullscreen();
 
     auto type_screen = CreateTypeSelectionScreen(state);

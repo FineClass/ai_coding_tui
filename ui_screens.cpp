@@ -1,6 +1,10 @@
 #include "ui_screens.h"
 #include "ui_panels.h"
+#include "project_persistence.h"
 #include "workflow_controller.h"
+
+#include <algorithm>
+#include <filesystem>
 
 namespace {
 
@@ -78,7 +82,7 @@ ftxui::Element RenderIterationHistoryWorkspace(const std::shared_ptr<AppState>& 
     content.push_back(ftxui::emptyElement());
     content.push_back(ftxui::text("[Esc] 返回主工作区") | ftxui::dim | ftxui::center);
 
-    return ftxui::vbox(content) | ftxui::flex |
+    return ftxui::vbox(content) |
            ((state->ui_session.active_region == FocusRegion::WORKBENCH)
                 ? ftxui::bgcolor(ftxui::Color::GrayDark)
                 : ftxui::nothing);
@@ -215,13 +219,77 @@ ftxui::Element RenderGlobalValidationWorkspace(const std::shared_ptr<AppState>& 
     content.push_back(ftxui::emptyElement());
     content.push_back(ftxui::text("[Esc] 返回主工作区") | ftxui::dim | ftxui::center);
 
-    return ftxui::vbox(content) | ftxui::flex |
+    return ftxui::vbox(content) |
+           ((state->ui_session.active_region == FocusRegion::WORKBENCH)
+                ? ftxui::bgcolor(ftxui::Color::GrayDark)
+                : ftxui::nothing);
+}
+
+ftxui::Element RenderCompletionSummary(const std::shared_ptr<AppState>& state) {
+    std::vector<ftxui::Element> content;
+    content.push_back(ftxui::text("🎉 项目完成总结") | ftxui::bold | ftxui::color(ftxui::Color::Green));
+    content.push_back(ftxui::separator());
+    content.push_back(ftxui::emptyElement());
+
+    content.push_back(ftxui::text("项目名称: " + state->project->name) | ftxui::bold);
+    content.push_back(ftxui::text("项目类型: " + ProjectTypeToString(state->project->type)));
+    content.push_back(ftxui::text("工作目录: " + state->project->working_directory));
+    content.push_back(ftxui::emptyElement());
+    content.push_back(ftxui::separator());
+
+    int total_iterations = 0;
+    std::vector<std::string> all_key_files;
+    for (size_t i = 0; i < state->project->stages.size(); ++i) {
+        const auto& stage = state->project->stages[i];
+        total_iterations += stage.iteration_count;
+        for (const auto& f : stage.execution_summary.key_files) {
+            if (std::find(all_key_files.begin(), all_key_files.end(), f) == all_key_files.end()) {
+                all_key_files.push_back(f);
+            }
+        }
+        content.push_back(ftxui::text("阶段 " + std::to_string(i + 1) + ": " + stage.name) | ftxui::bold | ftxui::color(ftxui::Color::Cyan));
+        content.push_back(ftxui::text("  迭代次数: " + std::to_string(stage.iteration_count)));
+        content.push_back(ftxui::text("  结果摘要: " + stage.execution_summary.result_summary));
+        content.push_back(ftxui::text("  动作状态: " + ActionStateIcon(stage.action_state) + " " + ActionStateLabel(stage.action_state)));
+        content.push_back(ftxui::emptyElement());
+    }
+    content.push_back(ftxui::separator());
+
+    content.push_back(ftxui::text("总迭代次数: " + std::to_string(total_iterations)) | ftxui::bold);
+    content.push_back(ftxui::emptyElement());
+
+    content.push_back(ftxui::text("涉及关键文件:") | ftxui::bold | ftxui::color(ftxui::Color::Cyan));
+    for (const auto& f : all_key_files) {
+        content.push_back(ftxui::text("  - " + f));
+    }
+    content.push_back(ftxui::emptyElement());
+
+    const auto& last_stage = state->project->stages.back();
+    if (last_stage.execution_summary.build_summary.command_ran) {
+        auto build_ok = last_stage.execution_summary.build_summary.success;
+        content.push_back(ftxui::text("最终构建状态: " + std::string(build_ok ? "✅ 通过" : "❌ 失败"))
+            | ftxui::color(build_ok ? ftxui::Color::Green : ftxui::Color::Red) | ftxui::bold);
+    }
+
+    content.push_back(ftxui::emptyElement());
+    content.push_back(ftxui::separator());
+    content.push_back(ftxui::text("[I] 查看迭代历史 · [V] 查看全局复核") | ftxui::dim | ftxui::center);
+
+    return ftxui::vbox(content) |
            ((state->ui_session.active_region == FocusRegion::WORKBENCH)
                 ? ftxui::bgcolor(ftxui::Color::GrayDark)
                 : ftxui::nothing);
 }
 
 ftxui::Element RenderNormalWorkspace(const std::shared_ptr<AppState>& state) {
+    bool all_done = true;
+    for (const auto& s : state->project->stages) {
+        if (s.stage_state != StageState::DONE) { all_done = false; break; }
+    }
+    if (all_done) {
+        return RenderCompletionSummary(state);
+    }
+
     const auto& stage = state->project->stages[state->project->current_stage_index];
     const auto& summary = stage.execution_summary;
     std::vector<ftxui::Element> content;
@@ -387,7 +455,7 @@ ftxui::Element RenderNormalWorkspace(const std::shared_ptr<AppState>& state) {
     content.push_back(ftxui::separator());
     content.push_back(ftxui::text("[I] 查看迭代历史 · [V] 查看全局复核") | ftxui::dim | ftxui::center);
 
-    return ftxui::vbox(content) | ftxui::flex |
+    return ftxui::vbox(content) |
            ((state->ui_session.active_region == FocusRegion::WORKBENCH)
                 ? ftxui::bgcolor(ftxui::Color::GrayDark)
                 : ftxui::nothing);
@@ -461,6 +529,42 @@ ftxui::Element RenderWorkspaceOverlay(const std::shared_ptr<AppState>& state, ft
 }  // namespace
 
 bool route_workspace_event(const std::shared_ptr<AppState>& state, ftxui::Event event) {
+    if (state->ui_session.input_mode) {
+        if (event == ftxui::Event::Escape) {
+            state->ui_session.input_mode = false;
+            state->ui_session.user_input.clear();
+            state->NotifyListeners();
+            return true;
+        }
+        if (event == ftxui::Event::Return) {
+            if (!state->ui_session.user_input.empty()) {
+                auto& stage = state->project->stages[state->project->current_stage_index];
+                stage.conversation_history.push_back("用户: " + state->ui_session.user_input);
+            }
+            state->ui_session.input_mode = false;
+            state->ui_session.user_input.clear();
+            state->NotifyListeners();
+            return true;
+        }
+        if (event == ftxui::Event::Backspace) {
+            if (!state->ui_session.user_input.empty()) {
+                state->ui_session.user_input.pop_back();
+                while (!state->ui_session.user_input.empty() &&
+                       (static_cast<unsigned char>(state->ui_session.user_input.back()) & 0xC0) == 0x80) {
+                    state->ui_session.user_input.pop_back();
+                }
+            }
+            state->NotifyListeners();
+            return true;
+        }
+        if (event.is_character()) {
+            state->ui_session.user_input += event.character();
+            state->NotifyListeners();
+            return true;
+        }
+        return true;
+    }
+
     if (state->ui_session.overlay_kind != OverlayKind::NONE) {
         auto& current_stage = state->project->stages[state->project->current_stage_index];
         if (event == ftxui::Event::Character('c') || event == ftxui::Event::Character('C')) {
@@ -502,11 +606,37 @@ bool route_workspace_event(const std::shared_ptr<AppState>& state, ftxui::Event 
     if (state->ui_session.workspace_view != WorkspaceView::NORMAL) {
         if (event == ftxui::Event::Escape) {
             state->ui_session.workspace_view = WorkspaceView::NORMAL;
+            state->ui_session.scroll_y = 0.0f;
             state->ui_session.active_region = state->ui_session.last_focus_region;
             state->NotifyListeners();
             return true;
         }
         return false;
+    }
+
+    if (state->ui_session.active_region == FocusRegion::WORKBENCH) {
+        constexpr float kScrollStep = 0.05f;
+        constexpr float kPageStep = 0.25f;
+        if (event == ftxui::Event::ArrowUp) {
+            state->ui_session.scroll_y = std::max(0.f, state->ui_session.scroll_y - kScrollStep);
+            state->NotifyListeners();
+            return true;
+        }
+        if (event == ftxui::Event::ArrowDown) {
+            state->ui_session.scroll_y = std::min(1.f, state->ui_session.scroll_y + kScrollStep);
+            state->NotifyListeners();
+            return true;
+        }
+        if (event == ftxui::Event::PageUp) {
+            state->ui_session.scroll_y = std::max(0.f, state->ui_session.scroll_y - kPageStep);
+            state->NotifyListeners();
+            return true;
+        }
+        if (event == ftxui::Event::PageDown) {
+            state->ui_session.scroll_y = std::min(1.f, state->ui_session.scroll_y + kPageStep);
+            state->NotifyListeners();
+            return true;
+        }
     }
 
     auto& stage = state->project->stages[state->project->current_stage_index];
@@ -600,6 +730,7 @@ bool route_workspace_event(const std::shared_ptr<AppState>& state, ftxui::Event 
     if (event == ftxui::Event::Character('i') || event == ftxui::Event::Character('I')) {
         state->ui_session.last_focus_region = state->ui_session.active_region;
         state->ui_session.workspace_view = WorkspaceView::ITERATION_HISTORY;
+        state->ui_session.scroll_y = 0.0f;
         state->NotifyListeners();
         return true;
     }
@@ -607,8 +738,19 @@ bool route_workspace_event(const std::shared_ptr<AppState>& state, ftxui::Event 
     if (event == ftxui::Event::Character('v') || event == ftxui::Event::Character('V')) {
         state->ui_session.last_focus_region = state->ui_session.active_region;
         state->ui_session.workspace_view = WorkspaceView::GLOBAL_VALIDATION;
+        state->ui_session.scroll_y = 0.0f;
         state->NotifyListeners();
         return true;
+    }
+
+    if (event == ftxui::Event::Character('/')) {
+        if (!state->is_processing) {
+            state->ui_session.input_mode = true;
+            state->ui_session.user_input.clear();
+            state->NotifyListeners();
+            return true;
+        }
+        return false;
     }
 
     return false;
@@ -616,11 +758,29 @@ bool route_workspace_event(const std::shared_ptr<AppState>& state, ftxui::Event 
 
 ftxui::Component CreateTypeSelectionScreen(std::shared_ptr<AppState> state) {
     auto selected = std::make_shared<int>(0);
+    int max_options = state->has_saved_state ? 2 : 1;
 
-    auto renderer = ftxui::Renderer([state, selected] {
+    auto renderer = ftxui::Renderer([state, selected, max_options] {
         std::vector<ftxui::Element> children;
         children.push_back(ftxui::text("选择项目类型") | ftxui::center | ftxui::bold | ftxui::color(ftxui::Color::Cyan));
         children.push_back(ftxui::emptyElement());
+
+        if (state->has_saved_state) {
+            std::vector<ftxui::Element> card0;
+            card0.push_back(ftxui::text("📂 恢复上次项目") | ftxui::bold | ftxui::color(ftxui::Color::Green));
+            card0.push_back(ftxui::emptyElement());
+            card0.push_back(ftxui::text("检测到上次保存的项目状态，可以继续上次的工作"));
+            card0.push_back(ftxui::emptyElement());
+            card0.push_back(ftxui::text("[Enter/Space] 恢复项目") | ftxui::center);
+            auto card0_box = ftxui::vbox(card0) | ftxui::border;
+            if (*selected == 0) {
+                card0_box = card0_box | ftxui::color(ftxui::Color::Yellow) | ftxui::bold;
+            }
+            children.push_back(card0_box);
+            children.push_back(ftxui::emptyElement());
+        }
+
+        int offset = state->has_saved_state ? 1 : 0;
 
         std::vector<ftxui::Element> card1;
         card1.push_back(ftxui::text("🔵 新功能/优化功能") | ftxui::bold | ftxui::color(ftxui::Color::Blue));
@@ -630,9 +790,8 @@ ftxui::Component CreateTypeSelectionScreen(std::shared_ptr<AppState> state) {
         card1.push_back(ftxui::text("产物 需求文档、设计文档、验收测试清单"));
         card1.push_back(ftxui::emptyElement());
         card1.push_back(ftxui::text("[Enter/Space] 选择此类型") | ftxui::center);
-
         auto card1_box = ftxui::vbox(card1) | ftxui::border;
-        if (*selected == 0) {
+        if (*selected == offset) {
             card1_box = card1_box | ftxui::color(ftxui::Color::Yellow) | ftxui::bold;
         }
         children.push_back(card1_box);
@@ -646,9 +805,8 @@ ftxui::Component CreateTypeSelectionScreen(std::shared_ptr<AppState> state) {
         card2.push_back(ftxui::text("产物 问题报告、修复方案、回归测试结果"));
         card2.push_back(ftxui::emptyElement());
         card2.push_back(ftxui::text("[Enter/Space] 选择此类型") | ftxui::center);
-
         auto card2_box = ftxui::vbox(card2) | ftxui::border;
-        if (*selected == 1) {
+        if (*selected == offset + 1) {
             card2_box = card2_box | ftxui::color(ftxui::Color::Yellow) | ftxui::bold;
         }
         children.push_back(card2_box);
@@ -658,15 +816,29 @@ ftxui::Component CreateTypeSelectionScreen(std::shared_ptr<AppState> state) {
         return ftxui::vbox(children) | ftxui::center | ftxui::size(ftxui::WIDTH, ftxui::LESS_THAN, 80);
     });
 
-    return ftxui::CatchEvent(renderer, [state, selected](ftxui::Event event) {
+    return ftxui::CatchEvent(renderer, [state, selected, max_options](ftxui::Event event) {
         if (event == ftxui::Event::ArrowUp) {
-            *selected = (*selected == 0) ? 1 : 0;
+            *selected = (*selected == 0) ? max_options : *selected - 1;
             return true;
         } else if (event == ftxui::Event::ArrowDown) {
-            *selected = (*selected == 1) ? 0 : 1;
+            *selected = (*selected == max_options) ? 0 : *selected + 1;
             return true;
         } else if (event == ftxui::Event::Return || event == ftxui::Event::Character(' ')) {
-            state->project = std::make_shared<Project>("MyProject", *selected == 0 ? ProjectType::NEW_FEATURE : ProjectType::BUG_FIX);
+            int offset = state->has_saved_state ? 1 : 0;
+            if (state->has_saved_state && *selected == 0) {
+                auto cwd = std::filesystem::current_path().string();
+                auto path = persistence::DefaultSavePath(cwd);
+                auto project = std::make_shared<Project>("", ProjectType::NEW_FEATURE);
+                if (persistence::LoadProject(*project, path)) {
+                    state->project = project;
+                    state->screen = AppScreen::MAIN_WORKSPACE;
+                    workflow::SyncDerivedProjectState(*state->project);
+                    state->NotifyListeners();
+                    return true;
+                }
+            }
+            int type_index = *selected - offset;
+            state->project = std::make_shared<Project>("MyProject", type_index == 0 ? ProjectType::NEW_FEATURE : ProjectType::BUG_FIX);
             state->screen = AppScreen::INPUT_NAME;
             state->NotifyListeners();
             return true;
@@ -754,13 +926,29 @@ ftxui::Component CreateMainWorkspace(std::shared_ptr<AppState> state) {
 
     auto workspace_renderer = ftxui::Renderer([state] {
         if (!state->project) return ftxui::text("项目未初始化");
+        ftxui::Element content;
         if (state->ui_session.workspace_view == WorkspaceView::ITERATION_HISTORY) {
-            return RenderIterationHistoryWorkspace(state);
+            content = RenderIterationHistoryWorkspace(state);
+        } else if (state->ui_session.workspace_view == WorkspaceView::GLOBAL_VALIDATION) {
+            content = RenderGlobalValidationWorkspace(state);
+        } else {
+            content = RenderNormalWorkspace(state);
         }
-        if (state->ui_session.workspace_view == WorkspaceView::GLOBAL_VALIDATION) {
-            return RenderGlobalValidationWorkspace(state);
+        content = content
+            | ftxui::focusPositionRelative(0.f, state->ui_session.scroll_y)
+            | ftxui::yframe
+            | ftxui::vscroll_indicator
+            | ftxui::flex;
+
+        if (state->ui_session.input_mode) {
+            auto input_box = ftxui::hbox({
+                ftxui::text("/ ") | ftxui::bold | ftxui::color(ftxui::Color::Yellow),
+                ftxui::text(state->ui_session.user_input),
+                ftxui::text("_") | ftxui::blink,
+            }) | ftxui::border | ftxui::bgcolor(ftxui::Color::Black);
+            content = ftxui::vbox({content, input_box});
         }
-        return RenderNormalWorkspace(state);
+        return content;
     });
 
     auto context_renderer = ftxui::Renderer([state] {

@@ -37,6 +37,7 @@ public:
     std::string input_name;
     bool running = true;
     bool is_processing = false;
+    bool has_saved_state = false;
     std::mutex state_mutex;
     std::thread processing_thread;
     int processing_progress = 0;
